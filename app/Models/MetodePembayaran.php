@@ -12,7 +12,10 @@ class MetodePembayaran extends Model
     /** @use HasFactory<\Database\Factories\MetodePembayaranFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'metode_pembayarans';
 
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'nama_metode',
         'tipe',
@@ -21,6 +24,7 @@ class MetodePembayaran extends Model
         'is_aktif'
     ];
 
+    // Define relationships
     public function pembayaran(): HasMany
     {
         return $this->hasMany(Pembayaran::class, 'metode_pembayaran_id');

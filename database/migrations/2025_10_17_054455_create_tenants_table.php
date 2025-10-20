@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 255);
-            $table->foreignId('staff_id')->unique()->constrained('staff');
+            $table->foreignId('staff_id')->unique()->constrained('staffs');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

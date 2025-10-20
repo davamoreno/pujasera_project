@@ -11,6 +11,10 @@ class DetailPesanan extends Model
     /** @use HasFactory<\Database\Factories\DetailPesananFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'detail_pesanans';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'pesanan_id',
         'menu_item_id',
@@ -18,6 +22,8 @@ class DetailPesanan extends Model
         'harga_saat_pesan',
         'catatan',
     ];
+
+    // Define relationships
     public function menuItem() : BelongsTo
     {
         return $this->belongsTo(MenuItem::class, 'menu_item_id');

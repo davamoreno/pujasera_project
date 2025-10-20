@@ -11,10 +11,15 @@ class KategoriMenu extends Model
     /** @use HasFactory<\Database\Factories\KategoriMenuFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'kategori_menus';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'nama',
     ];
 
+    // Define relationships
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class, 'kategori_id');

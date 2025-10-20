@@ -11,10 +11,15 @@ class Role extends Model
     /** @use HasFactory<\Database\Factories\RoleFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'roles';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
        'nama'
     ];
 
+    // Define relationships
     public function staffs() : HasMany
     {
         return $this->hasMany(Staff::class, 'role_id');

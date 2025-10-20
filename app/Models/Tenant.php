@@ -12,6 +12,10 @@ class Tenant extends Model
     /** @use HasFactory<\Database\Factories\TenantFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'tenants';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'nama',
         'staff_id',
@@ -19,6 +23,7 @@ class Tenant extends Model
         
     ];
 
+    // Define relationships
     public function staff() : BelongsTo
     {
         return $this->belongsTo(Staff::class, 'staff_id');

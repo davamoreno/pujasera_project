@@ -13,6 +13,10 @@ class Pesanan extends Model
     /** @use HasFactory<\Database\Factories\PesananFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'pesanans';
+    
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'sesi_pembelian_id',
         'kode_pesanan',
@@ -20,6 +24,7 @@ class Pesanan extends Model
         'status_pesanan',
     ];
 
+    // Define relationships
     public function detailPesanans() : HasMany
     {
         return $this->hasMany(DetailPesanan::class, 'pesanan_id');

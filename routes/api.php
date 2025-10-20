@@ -1,0 +1,14 @@
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/login', [AuthController::class, 'login']); // Login route
+    Route::Group(['middleware' => 'auth:api'], function () {
+        Route::post('/logout', [AuthController::class, 'logout']); // Logout route
+        Route::post('/refresh', [AuthController::class, 'refresh']); // Refresh route
+        Route::get('/me', [AuthController::class, 'me']); // User route
+    });
+});

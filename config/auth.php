@@ -40,6 +40,18 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'staffs' => [
+            'driver' => 'session',
+            'provider' => 'staffs',
+        ],
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'staffs',
+        ],
+        'api' => [
+            'driver' => 'jwt',
+            'provider' => 'staffs'
+        ],
     ],
 
     /*
@@ -63,6 +75,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'staffs' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_STAFF_MODEL', App\Models\Staff::class),
         ],
 
         // 'users' => [

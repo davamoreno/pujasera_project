@@ -12,6 +12,10 @@ class MenuItem extends Model
     /** @use HasFactory<\Database\Factories\MenuItemFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'menu_items';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'tenant_id',
         'kategori_id',
@@ -22,6 +26,7 @@ class MenuItem extends Model
         'is_tersedia',
     ];
 
+    // Define relationships
     public function kategori() : BelongsTo
     {
         return $this->belongsTo(KategoriMenu::class, 'kategori_id');

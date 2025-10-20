@@ -11,6 +11,10 @@ class Pembayaran extends Model
     /** @use HasFactory<\Database\Factories\PembayaranFactory> */
     use HasFactory;
 
+    // Define the table associated with the model
+    protected $table = 'pembayarans';
+
+    // Define fillable attributes for mass assignment
     protected $fillable = [
         'pesanan_id',
         'metode_pembayaran_id',
@@ -19,6 +23,7 @@ class Pembayaran extends Model
         'waktu_pembayaran',
     ];
 
+    // Define relationships
     public function pesanan() : BelongsTo
     {
         return $this->belongsTo(Pesanan::class, 'pesanan_id');
