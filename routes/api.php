@@ -1,11 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\TenantController;
-use App\Models\Role;
+use App\Http\Controllers\Api\KategoriMenuController;
 
 Route::group(['prefix' => 'auth'], function () {
     Route::post('/login', [AuthController::class, 'login']); // Login route
@@ -19,4 +18,6 @@ Route::group(['prefix' => 'auth'], function () {
 Route::group(['middleware' => 'auth:api'], function () {
     Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
     Route::apiResource('/tenant', TenantController::class)->middleware('role:Admin');
+    Route::apiResource('/kategori-menu', KategoriMenuController::class)->middleware('role:Admin,Pemilik Tenant');
 });
+
