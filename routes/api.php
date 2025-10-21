@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\KategoriMenuController;
+use App\Http\Controllers\Api\MenuItemController;
+use App\Http\Controllers\Api\PesananController;
+
+Route::post('/pesanan', [PesananController::class, 'store']);
 
 Route::group(['prefix' => 'auth'], function () {
     Route::post('/login', [AuthController::class, 'login']); // Login route
