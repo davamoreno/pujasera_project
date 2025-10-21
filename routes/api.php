@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\TenantController;
+use App\Models\Role;
 
 Route::group(['prefix' => 'auth'], function () {
     Route::post('/login', [AuthController::class, 'login']); // Login route
@@ -11,4 +14,9 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('/refresh', [AuthController::class, 'refresh']); // Refresh route
         Route::get('/me', [AuthController::class, 'me']); // User route
     });
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
+    Route::apiResource('/tenant', TenantController::class)->middleware('role:Admin');
 });

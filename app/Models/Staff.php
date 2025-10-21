@@ -26,10 +26,6 @@ class Staff extends Authenticatable implements JWTSubject
         'role_id'
     ];
 
-    // Timestamps mapping
-    const CREATED_AT = 'created_at';
-    const UPDATED_AT = 'updated_at';
-
     // Define hidden attributes for arrays
     protected $hidden = [
         'password',
