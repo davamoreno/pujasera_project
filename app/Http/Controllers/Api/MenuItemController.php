@@ -17,7 +17,7 @@ class MenuItemController extends Controller
      */
 
     public function __construct(){
-        $this ->authorizeResource(MenuItem::class, 'menu_item');
+        $this->authorizeResource(MenuItem::class, 'menu_item');
     }
     public function index()
     {
