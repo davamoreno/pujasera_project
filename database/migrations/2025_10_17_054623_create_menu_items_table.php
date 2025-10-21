@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('harga', 10, 2);
             $table->string('gambar_url', 255)->nullable();
             $table->boolean('is_tersedia')->default(true);
+            $table->integer('qty');
             $table->timestamps();
         });
     }

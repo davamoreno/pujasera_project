@@ -19,5 +19,6 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
     Route::apiResource('/tenant', TenantController::class)->middleware('role:Admin');
     Route::apiResource('/kategori-menu', KategoriMenuController::class)->middleware('role:Admin,Pemilik Tenant');
+    Route::apiResource('/menu-items', MenuItemController::class);
 });
 

@@ -40,7 +40,7 @@ class KategoriMenuController extends Controller
     public function update(KategoriMenuRequest $request, KategoriMenu $kategoriMenu)
     {
        $request->validate([
-        'nama'=>['required','string','max:255','unique:kategori_menu,nama' , $kategoriMenu->id],
+        'nama'=>['required','string','max:255','unique:kategori_menu,nama' . $kategoriMenu->id],
        ]);
     }
 
