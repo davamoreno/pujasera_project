@@ -32,3 +32,4 @@ class UpdateMenuItemRequest extends FormRequest
         ];
     }
 }
+
