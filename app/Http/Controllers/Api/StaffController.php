@@ -37,7 +37,7 @@ class StaffController extends Controller
      */
     public function show(Staff $staff)
     {
-        //
+        return response()->json($staff->load('role'));
     }
 
     /**
