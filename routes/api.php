@@ -1,11 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\TenantController;
-use App\Models\Role;
 use App\Http\Controllers\Api\KategoriMenuController;
 
 Route::group(['prefix' => 'auth'], function () {
