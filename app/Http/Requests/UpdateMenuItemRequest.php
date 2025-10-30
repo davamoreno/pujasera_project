@@ -22,11 +22,11 @@ class UpdateMenuItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-             'nama' => ['sometimes', 'required', 'string', 'max:255'],
+            'nama' => ['sometimes', 'required', 'string', 'max:255'],
             'deskripsi' => ['sometimes', 'nullable', 'string'],
             'harga' => ['sometimes', 'required', 'numeric', 'min:0'],
             'qty' => ['sometimes', 'required', 'integer', 'min:0'],
-            'kategori_id' => ['sometimes', 'required', 'integer', 'exists:kategori_menu,id'],
+            'kategori_id' => ['sometimes', 'required', 'integer', 'exists:kategori_menus,id'],
             'gambar_url' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'is_tersedia' => ['sometimes', 'required', 'boolean'],
         ];

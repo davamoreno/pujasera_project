@@ -5,12 +5,10 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Policies\MenuItemPolicy;
 use App\Models\MenuItem;
+use Illuminate\Support\Facades\Gate;
 
 class AppServiceProvider extends ServiceProvider
 {
-    protected $policies = [
-        MenuItem::class => MenuItemPolicy::class,
-    ];
     /**
      * Register any application services.
      */
@@ -24,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // $this->registerPolicies();
+        Gate::policy(MenuItem::class, MenuItemPolicy::class);
     }
 }

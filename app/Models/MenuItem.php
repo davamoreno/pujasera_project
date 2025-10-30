@@ -22,6 +22,7 @@ class MenuItem extends Model
         'nama',
         'deskripsi',
         'harga',
+        'qty',
         'gambar_url',
         'is_tersedia',
     ];

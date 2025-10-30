@@ -28,7 +28,7 @@ class StoreMenuItemRequest extends FormRequest
             'deskripsi' => ['nullable', 'string'],
             'harga' => ['required', 'numeric', 'min:0'],
             'qty' => ['required', 'integer', 'min:0'],
-            'kategori_id' => ['required', 'integer', 'exists:kategori_menu,id'],
+            'kategori_id' => ['required', 'integer', 'exists:kategori_menus,id'],
             'gambar_url' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             
             // tenant_id wajib diisi HANYA JIKA user adalah Admin
