@@ -18,7 +18,7 @@ class Pesanan extends Model
     
     // Define fillable attributes for mass assignment
     protected $fillable = [
-        'sesi_pembelian_id',
+        'sesi_pembeli_id',
         'kode_pesanan',
         'total_harga',
         'status_pesanan',
