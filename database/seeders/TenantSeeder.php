@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Tenant;
+use App\Models\Staff;
 
 class TenantSeeder extends Seeder
 {
@@ -13,16 +14,20 @@ class TenantSeeder extends Seeder
      */
     public function run(): void
     {
-        Tenant::create([
-            'nama' => 'Warung Abhi',
-            'staff_id' => 1,
-            'is_active' => true,
-        ]);
+        $pemilikToko = Staff::where('username', 'pemiliktoko')->first();
 
-        Tenant::create([
-            'nama' => 'Warung Dava',
-            'staff_id' => 2,
-            'is_active' => true,
-        ]);
+        if ($pemilikToko) {
+            Tenant::updateOrCreate(
+                ['staff_id' => $pemilikToko->id], // Cari berdasarkan staff_id
+                [
+                    'nama' => 'Warung Budi',
+                    'is_active' => true
+                ]
+            );
+        }
+
+        // Opsional: Buat 1 tenant lagi dengan staf acak
+        $staffLain = Staff::factory()->create(['role_id' => 2]); // Buat 1 pemilik toko baru
+        Tenant::factory()->create(['staff_id' => $staffLain->id, 'nama' => 'Kopi Senja']);
     }
 }

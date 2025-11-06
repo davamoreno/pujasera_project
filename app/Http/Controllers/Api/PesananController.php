@@ -12,15 +12,26 @@ use App\Models\Pesanan;
 use App\Models\SesiPembeli;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class PesananController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $user = Auth::user();
+        $query = Pesanan::with(['sesiPembeli', 'detailPesanans.menuItem', 'pembayaran']);
+        if($user->role->nama === 'Pemilik Tenant'){
+            $tenantId= $user->tenant->id;
+            $query->whereHas('detailPesanans.menuItem', function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            });
+        }
+
+        $pesanan = $query->latest()->paginate(20);  
+        return response()->json($pesanan);
     }
 
     /**
@@ -41,7 +52,7 @@ class PesananController extends Controller
                 // Buat atau perbarui sesi pembeli berdasarkan kode transaksi
                 // UpdateOrCreate memastikan tidak ada duplikasi sesi pembeli
                 $sesi_pembeli = SesiPembeli::updateOrCreate(
-                    ['kode_transaksi' => $data['kode_sesi']],
+                    ['kode_sesi' => $data['kode_sesi']],
                     ['nama' => $data['nama_pelanggan']]
                 );
 
@@ -77,7 +88,7 @@ class PesananController extends Controller
                         'menu_item_id' => $menuItem->id,
                         'jumlah' => $item['jumlah'],
                         'catatan' => $item['catatan'] ?? null,
-                        'harga' => $hargaItem,
+                        'harga_saat_pesan' => $hargaItem,
                     ];
                 }
 
@@ -91,7 +102,7 @@ class PesananController extends Controller
 
                 // Buat detail pesanan(Child)
                 // attach() atau createMany() lebih efisien untuk memasukkan banyak data sekaligus
-                $pesanan->detailPesanan()->createMany($itemsDetails);
+                $pesanan->detailPesanans()->createMany($itemsDetails);
 
                 // Buat entri pembayaran terkait pesanan
                 $pembayaran = Pembayaran::create([
@@ -104,12 +115,12 @@ class PesananController extends Controller
                 // Kurangi stok menu item setelah semua pengecekan berhasil
                 // ini dilakukan di akhir transaksi untuk memastikan konsistensi data
                 foreach ($itemsToLock as $itemLock) {
-                    $itemLock['model']->decrement('qty', $itemLock['jumlah_dibeli']);
+                    $itemLock['menu_item']->decrement('qty', $itemLock['jumlah']);
                 }
 
                 // Kembalikan data pesanan beserta pembayarannya
                 return [
-                    'pesanan' => $pesanan->load('detailPesanan'),
+                    'pesanan' => $pesanan->load('detailPesanans'),
                     'pembayaran' => $pembayaran,
                 ];
             });
@@ -130,17 +141,23 @@ class PesananController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Pesanan $pesanan)
     {
-        //
+        return response()->json($pesanan->load(['sesiPembeli', 'detailPesanans.menuItem.tenant', 'pembayaran']));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Pesanan $pesanan)
     {
-        //
+        $validated = $request->validate([
+            'status_pesanan' => 'required|string|in:diproses,selesai,dibatalkan',
+        ]);
+
+        $pesanan->update($validated);
+
+        return response()->json($pesanan);
     }
 
     /**

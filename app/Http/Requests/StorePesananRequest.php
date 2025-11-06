@@ -28,7 +28,7 @@ class StorePesananRequest extends FormRequest
             'kode_sesi' => ['required', 'string', 'max:100'], // Bisa jadi nomor meja
 
             // Info Pembayaran
-            'metode_pembayaran_id' => ['required', 'integer', 'exists:metode_pembayaran,id'],
+            'metode_pembayaran_id' => ['required', 'integer', 'exists:metode_pembayarans,id'],
 
             // Validasi Array Item
             'items' => ['required', 'array', 'min:1'],

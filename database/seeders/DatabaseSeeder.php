@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call(StaffSeeder::class);
         $this->call(TenantSeeder::class);
         $this->call(KategoriSeeder::class);
+        $this->call(MetodePembayaranSeeder::class);
+        $this->call(MenuItemSeeder::class);
 
         // User::factory(10)->create();
 
