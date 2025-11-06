@@ -32,9 +32,18 @@ class MenuItemController extends Controller
     //   return response()->json($menuItems);
     // }
 
-    public function index(Tenant $tenant)
+    public function index()
     {
-        $menuItems = $tenant->menuItems()->with('kategori')->get();
+        $user = Auth::user();
+
+        if($user->role->nama === 'Admin'){
+            $menuItems = MenuItem::with('tenant','kategori')->get();
+        }else{
+            $tenantId= $user->tenant->id;
+            $menuItems = MenuItem::where('tenant_id',$tenantId)
+            ->with('kategori')
+            ->get();
+        }
 
         if($menuItems->isEmpty() ){
             return response()->json(['message' => 'No menu items found for this tenant.'], 404);

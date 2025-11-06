@@ -26,7 +26,8 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
     Route::apiResource('/tenant', TenantController::class)->middleware('role:Admin');
     Route::apiResource('/kategori-menu', KategoriMenuController::class)->middleware('role:Admin,Pemilik Tenant');
-    Route::apiResource('/tenant.menu-items', MenuItemController::class)->scoped()->middleware('role:Admin,Pemilik Tenant');
+    Route::apiResource('/tenant.menu-items', MenuItemController::class)->only(['show', 'store', 'update', 'destroy'])->scoped()->middleware('role:Admin,Pemilik Tenant');
+    Route::get('/menu-items', [MenuItemController::class, 'index'])->middleware('role:Admin,Pemilik Tenant');
     Route::apiResource('/pesanan', PesananController::class)->only(['index', 'show', 'update'])->middleware('role:Admin,Pemilik Tenant');
     // Route pembayaran
     Route::post('/pembayaran/{pesanan}/konfirmasi', [PembayaranController::class, 'konfirmasiManual'])->middleware('role:Admin,Pemilik Tenant');

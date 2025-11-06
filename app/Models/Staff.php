@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Tenant;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Staff extends Authenticatable implements JWTSubject

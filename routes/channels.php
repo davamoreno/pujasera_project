@@ -2,16 +2,25 @@
 
 use Illuminate\Support\Facades\Broadcast;
 
-Broadcast::routes();
+/*
+|--------------------------------------------------------------------------
+| Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| Di sinilah Anda dapat mendaftarkan semua channel siaran event
+| yang didukung oleh aplikasi Anda.
+|
+*/
 
-/**
- * Channel ini akan memvalidasi apakah staff yang sedang login
- * berhak mendengarkan notifikasi untuk tenant ID tertentu.
- */
+// PERBAIKAN: Tambahkan ['middleware' => 'auth:api']
+// Ini memberitahu Laravel untuk menggunakan guard JWT kita untuk rute auth siaran
+Broadcast::routes(['middleware' => 'auth:api']);
+
+// Channel ini akan memvalidasi apakah staff yang sedang login
+// berhak mendengarkan notifikasi untuk tenant ID tertentu.
+
 Broadcast::channel('tenant.{tenantId}', function ($staff, $tenantId) {
-    // $staff adalah user yang sedang login (didapat dari token)
-    // $tenantId adalah ID dari URL channel
-    
-    // Pastikan user adalah 'Pemilik Toko' dan ID tenant-nya cocok
-    return $staff->role->nama == 'Pemilik Tenant' && $staff->tenant->id == $tenantId;
-});
+    // Logika ini sudah benar
+    // $staff adalah user yang didapat dari token JWT
+    return $staff->role->nama === 'Pemilik Tenant' && $staff->tenant->id == $tenantId;
+}, ['guards' => ['api']]);

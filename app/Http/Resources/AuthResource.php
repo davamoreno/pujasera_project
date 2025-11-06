@@ -21,6 +21,13 @@ class AuthResource extends JsonResource
             'role' => $this->role->nama,
             'created_at' => $this->created_at->format('d M Y, H:i'),
             'updated_at' => $this->updated_at->diffForHumans(),
+            'tenant' => $this->tenants->map(function($tenant) {
+                return [
+                    'id' => $tenant->id,
+                    'nama' => $tenant->nama,
+                    'is_active' => $tenant->is_active,
+                ];
+            }),
         ];
     }
 }

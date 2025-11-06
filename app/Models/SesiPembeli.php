@@ -15,7 +15,7 @@ class SesiPembeli extends Model
 
     // Define fillable attributes for mass assignment
     protected $fillable = [
-        'kode_transaksi',
+        'kode_sesi',
         'nama',
         'waktu_mulai',
     ];

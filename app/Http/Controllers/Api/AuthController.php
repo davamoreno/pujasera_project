@@ -25,7 +25,7 @@ class AuthController extends Controller
         ]);
         
         // 2. Coba autentikasi user dengan kredensial yang diberikan.
-       if (! $token = Auth::guard('api')->attempt($credentials)) {
+       if (!$token = Auth::guard('api')->attempt($credentials)) {
             // 3. Jika gagal, kirim response error.
             throw ValidationException::withMessages([
                 'username' => ['Kredensial yang diberikan tidak cocok.'],
@@ -36,9 +36,9 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
-            'user' => new AuthResource(Auth::guard('api')->user())
-        ]);
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60 * 60 * 24,
+            'user' => new AuthResource(Auth::guard('api')->user()),
+        ], 200);
     }
 
     /**
@@ -84,12 +84,14 @@ class AuthController extends Controller
      */
     protected function createNewToken($token)
     {
+        $user = new AuthResource(Auth::guard('api')->user());
+        $user->load('role', 'tenants');
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() *
-    60,
-            'user' => new AuthResource(Auth::guard('api')->user())
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60 * 60 * 24,
+            'user' => $user
         ]);
     }
 }

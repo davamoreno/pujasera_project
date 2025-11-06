@@ -33,7 +33,7 @@ class PembayaranController extends Controller
                 // Perbarui status pembayaran pada tabel pembayaran dan pesanan
                 $pesanan->pembayaran->update([
                     'status_pembayaran' => 'Lunas', 
-                    'waktu_pembayaran' => now()
+                    'waktu_bayar' => now()
                 ]);
 
                 // Perbarui status pesanan menjadi 'Diproses'
@@ -41,10 +41,10 @@ class PembayaranController extends Controller
             });
 
             // Muat ulang relasi untuk mendapatkan detail pesanan lengkap
-            $pesananLengkap = $pesanan->load('detailPesanan.menuItem.tenant');
+            $pesananLengkap = $pesanan->load('detailPesanans.menuItem.tenant');
 
             // Kelompokkan item berdasarkan tenant
-            $itemsByTenant = $pesananLengkap->detailPesanan->groupBy(function ($detail) {
+            $itemsByTenant = $pesananLengkap->detailPesanans->groupBy(function ($detail) {
                 return $detail->menuItem->tenant->id;
             });
 
