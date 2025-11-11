@@ -22,10 +22,10 @@ class PesananController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Pesanan::with(['sesiPembeli', 'detailPesanans.menuItem', 'pembayaran']);
+        $query = Pesanan::with(['sesiPembeli', 'detailPesanan.menuItem', 'pembayaran']);
         if($user->role->nama === 'Pemilik Tenant'){
             $tenantId= $user->tenant->id;
-            $query->whereHas('detailPesanans.menuItem', function ($query) use ($tenantId) {
+            $query->whereHas('detailPesanan.menuItem', function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId);
             });
         }
@@ -37,113 +37,94 @@ class PesananController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePesananRequest $request)
-    {
-        /**
-         * Menyimpan pesanan baru beserta detailnya dalam satu transaksi database.
-         */
-        $data = $request->validated();
-        
-        try {
-            // Mulai transaksi database
-            // Memastikan semua operasi database berhasil atau tidak sama sekali
-            $result = DB::transaction(function () use ($data) {
+   public function store(StorePesananRequest $request)
+{
+    $data = $request->validated();
+    
+    try {
+        $result = DB::transaction(function () use ($data) {
 
-                // Buat atau perbarui sesi pembeli berdasarkan kode transaksi
-                // UpdateOrCreate memastikan tidak ada duplikasi sesi pembeli
-                $sesi_pembeli = SesiPembeli::updateOrCreate(
-                    ['kode_sesi' => $data['kode_sesi']],
-                    ['nama' => $data['nama_pelanggan']]
-                );
+            // Asumsi kolom di tabel sesi_pembeli adalah 'kode_sesi'
+            // Jika kolomnya 'kode_transaksi', ganti di bawah ini
+            $sesi_pembeli = SesiPembeli::updateOrCreate(
+                ['kode_sesi' => $data['kode_sesi']], 
+                ['nama' => $data['nama_pelanggan']]
+            );
 
-                // Variabel untuk menyimpan total harga pesanan
-                $totalHargaPesanan = 0;
-                $itemsToLock = []; // ID Item yang akan di-kunci
-                $itemsDetails = []; // Detail item yang sudah diproses
+            $totalHargaPesanan = 0;
+            $itemsToLock = [];
+            $itemsDetails = [];
+            
+            foreach ($data['items'] as $item) {
+                $menuItem = MenuItem::where('id', $item['menu_item_id'])->lockForUpdate()->first();
+
+                if ($menuItem->qty < $item['jumlah'] || !$menuItem->is_tersedia) {
+                    throw new \Exception("Stok tidak mencukupi untuk item: " . $menuItem->nama);
+                }
                 
-                // Proses Item & Kunci Stok Menu Item(Pessimistik Locking)
-                foreach ($data['items'] as $item) {
-                    // Kunci baris menu item agar tidak ada proses lain yang mengganggunya
-                    // Ini adalah langkah anti-race condition(mencegah konflik data saat banyak proses berjalan bersamaan)
-                    $menuItem = MenuItem::where('id', $item['menu_item_id'])->lockForUpdate()->first();
+                $hargaItem = $menuItem->harga * $item['jumlah'];
+                $totalHargaPesanan += $hargaItem;
 
-                    // Cek ketersediaan stok
-                    if ($menuItem->qty < $item['jumlah'] || !$menuItem->is_tersedia) {
-                        // Jika stock tidak cukup, gagalkan seluruh transaksi
-                        throw new \Exception("Stok tidak mencukupi untuk item: " . $menuItem->nama);
-                    }
-                    
-                    // Hitung total harga pesanan
-                    $hargaItem = $menuItem->harga * $item['jumlah'];
-                    $totalHargaPesanan += $hargaItem;
-
-                    // Simpan item untuk dikurangi stoknya nanti
-                    $itemsToLock[] = [
-                        'menu_item' => $menuItem,
-                        'jumlah' => $item['jumlah']
-                    ];
-
-                    // Siapkan detail item untuk dimasukkan ke pesanan
-                    $itemsDetails[] = [
-                        'menu_item_id' => $menuItem->id,
-                        'jumlah' => $item['jumlah'],
-                        'catatan' => $item['catatan'] ?? null,
-                        'harga_saat_pesan' => $hargaItem,
-                    ];
-                }
-
-                // Buat pesanan(Master)
-                $pesanan = Pesanan::create([
-                    'sesi_pembeli_id' => $sesi_pembeli->id,
-                    'kode_pesanan' => 'ORD-' . Str::random(8),
-                    'total_harga' => $totalHargaPesanan,
-                    'status' => 'pending',
-                ]);
-
-                // Buat detail pesanan(Child)
-                // attach() atau createMany() lebih efisien untuk memasukkan banyak data sekaligus
-                $pesanan->detailPesanans()->createMany($itemsDetails);
-
-                // Buat entri pembayaran terkait pesanan
-                $pembayaran = Pembayaran::create([
-                    'pesanan_id' => $pesanan->id,
-                    'metode_pembayaran_id' => $data['metode_pembayaran_id'],
-                    'jumlah_bayar' => $totalHargaPesanan,
-                    'status' => 'pending',
-                ]);
-
-                // Kurangi stok menu item setelah semua pengecekan berhasil
-                // ini dilakukan di akhir transaksi untuk memastikan konsistensi data
-                foreach ($itemsToLock as $itemLock) {
-                    $itemLock['menu_item']->decrement('qty', $itemLock['jumlah']);
-                }
-
-                // Kembalikan data pesanan beserta pembayarannya
-                return [
-                    'pesanan' => $pesanan->load('detailPesanans'),
-                    'pembayaran' => $pembayaran,
+                $itemsToLock[] = [
+                    'menu_item' => $menuItem,
+                    'jumlah' => $item['jumlah']
                 ];
-            });
 
-            // Kembalikan response sukses dengan data pesanan dan pembayaran
-            return response()->json($result, 201);
+                $itemsDetails[] = [
+                    'menu_item_id' => $menuItem->id,
+                    'jumlah' => $item['jumlah'],
+                    'catatan' => $item['catatan'] ?? null,
+                    'harga_saat_pesan' => $menuItem->harga, 
+                ];
+            }
 
-        } 
-        // Tangani error selama transaksi
-        catch (\Exception $e) {
-            // Tangani error dan kembalikan response gagal
-            return response()->json([
-                'message' => 'Gagal Membuat Pesanan', 'error' => $e->getMessage()], 422);
-                // 422 Unprocessable Entity menandakan ada masalah dengan data yang dikirim
-        }
+            $pesanan = Pesanan::create([
+                'sesi_pembeli_id' => $sesi_pembeli->id,
+                'kode_pesanan' => 'ORD-' . Str::random(8),
+                'total_harga' => $totalHargaPesanan,
+                'status_pesanan' => 'pending', 
+            ]);
+
+            // --- PERBAIKAN DI SINI ---
+            // Ganti 'detailPesanan' (singular) menjadi 'detailPesanans' (plural)
+            $pesanan->detailPesanans()->createMany($itemsDetails);
+
+            $pembayaran = Pembayaran::create([
+                'pesanan_id' => $pesanan->id,
+                'metode_pembayaran_id' => $data['metode_pembayaran_id'],
+                'jumlah_bayar' => $totalHargaPesanan,
+                'status_pembayaran' => 'pending',
+            ]);
+
+            foreach ($itemsToLock as $itemLock) {
+                $itemLock['menu_item']->decrement('qty', $itemLock['jumlah']);
+            }
+
+            return [
+                // --- PERBAIKAN DI SINI ---
+                // Load relasi 'detailPesanans' (plural)
+                'pesanan' => $pesanan->load('detailPesanans'),
+                'pembayaran' => $pembayaran,
+            ];
+        });
+
+        // Jika transaksi sukses, kirim response 201 Created
+        return response()->json($result, 201);
+
+    } 
+    catch (\Exception $e) {
+        // Jika ada error (misal stok habis atau error lain)
+        return response()->json([
+            'message' => 'Gagal Membuat Pesanan', 'error' => $e->getMessage()], 422);
     }
+}
 
     /**
      * Display the specified resource.
      */
     public function show(Pesanan $pesanan)
     {
-        return response()->json($pesanan->load(['sesiPembeli', 'detailPesanans.menuItem.tenant', 'pembayaran']));
+        return response()->json($pesanan->load(['sesiPembeli', 'detailPesanan.menuItem.tenant', 'pembayaran']));
     }
 
     /**

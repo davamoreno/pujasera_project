@@ -33,12 +33,7 @@ class AuthController extends Controller
         }
 
         // 4. Jika berhasil, kirim token sebagai response.
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60 * 60 * 24,
-            'user' => new AuthResource(Auth::guard('api')->user()),
-        ], 200);
+        return $this->createNewToken($token);
     }
 
     /**
@@ -84,14 +79,16 @@ class AuthController extends Controller
      */
     protected function createNewToken($token)
     {
-        $user = new AuthResource(Auth::guard('api')->user());
-        $user->load('role', 'tenants');
+        $user = Auth::guard('api')->user();
+        $user->load('role', 'tenant');
+
+        $userResource = new AuthResource($user);
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => Auth::guard('api')->factory()->getTTL() * 60 * 60 * 24,
-            'user' => $user
+            'user' => $userResource
         ]);
     }
 }

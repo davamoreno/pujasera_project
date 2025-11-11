@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Tenant;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Staff extends Authenticatable implements JWTSubject
@@ -38,9 +39,9 @@ class Staff extends Authenticatable implements JWTSubject
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function tenants() : HasMany
+    public function tenant() : HasOne
     {
-        return $this->hasMany(Tenant::class, 'staff_id');
+        return $this->hasOne(Tenant::class, 'staff_id');
     }
 
     /**
