@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
 use App\Models\MenuItem;
-use Illuminate\Http\Request;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+
+use Illuminate\Http\Request;
 
 class MenuItemController extends Controller
 {
@@ -17,35 +18,22 @@ class MenuItemController extends Controller
      * Display a listing of the resource.
      */
 
-    // public function index()
-    // {
-    //   $user = Auth::user();
-
-    //   if($user->role->nama === 'Admin'){
-    //     $menuItems = MenuItem::with('tenant','kategori')->get(); 
-    //   }else{
-    //     $tenantId= $user->tenant->id;
-    //     $menuItems = MenuItem::where('tenant_id',$tenantId)
-    //     ->with('kategori')
-    //     ->get();
-    //   }
-    //   return response()->json($menuItems);
-    // }
-
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
+        $query = MenuItem::query()->with('tenant', 'kategori');
         if($user->role->nama === 'Admin'){
-            $menuItems = MenuItem::with('tenant','kategori')->get();
+            if ($request->has('tenant_id')) {
+                $query->where('tenant_id', $request->query('tenant_id'));
+            }
         }else{
-            $tenantId= $user->tenant->id;
-            $menuItems = MenuItem::where('tenant_id',$tenantId)
-            ->with('kategori')
-            ->get();
+            $tenantId = $user->tenant->id;
+            $query->where('tenant_id', $tenantId);
         }
 
-        if($menuItems->isEmpty() ){
+        $menuItems = $query->latest()->paginate(10);
+        if($menuItems->count() === 0){
             return response()->json(['message' => 'No menu items found for this tenant.'], 404);
         }
         

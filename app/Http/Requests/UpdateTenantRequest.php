@@ -24,6 +24,8 @@ class UpdateTenantRequest extends FormRequest
     {
         return [
             'nama' => ['sometimes', 'required', 'string', 'max:255'],
+            'gambar_url' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'status' => ['nullable', 'string', 'in:Beberapa menu tidak halal,Aman/Halal'],
             'staff_id' => ['sometimes', 'required', 'integer', 'exists:staffs,id', Rule::unique('tenants')->ignore($this->tenant)],
             'is_active' => ['sometimes', 'boolean'],
         ];
