@@ -21,6 +21,8 @@ class Tenant extends Model
     // Define fillable attributes for mass assignment
     protected $fillable = [
         'nama',
+        'gambar_url',
+        'status',
         'staff_id',
         'is_active',
         

@@ -23,6 +23,8 @@ class StoreTenantRequest extends FormRequest
     {
         return [
             'nama' => ['required', 'string', 'max:255'],
+            'gambar_url' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'status' => ['nullable', 'string', 'in:Beberapa menu tidak halal,Aman/Halal'],
             'staff_id' => ['required', 'exists:staffs,id', 'unique:tenants,staff_id'],
             'is_active' => ['sometimes', 'boolean'],
         ];
