@@ -8,9 +8,12 @@ use App\Http\Controllers\Api\KategoriMenuController;
 use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\PesananController;
 use App\Http\Controllers\Api\PembayaranController;
+use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\RoleController;
 
 Route::post('/pesanan', [PesananController::class, 'store']);
+
+Route::post('/webhook/payment', [WebhookController::class, 'handle']);
 
 Route::group(['prefix' => 'auth'], function () {
 
