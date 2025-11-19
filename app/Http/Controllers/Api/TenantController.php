@@ -31,16 +31,20 @@ class TenantController extends Controller
             });
         }
 
-        // Apply sorting
-        $sortBy = $request->input('sort_by', 'id');
-        //  Default sort direction is ascending
-        $sortDir = $request->input('sort_dir', 'asc');
-        // Prevent sorting by non-allowed fields
-        $allowedSorts = ['id', 'nama', 'created_at', 'updated_at'];
-        //  If the requested sortBy is not in allowedSorts, default to 'id'
-        if (!in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortDir);
+        if($request->has('sort_by') && $request->has('sort_dir'))
+        {
+            // Apply sorting
+            $sortBy = $request->input('sort_by', 'id');
+            //  Default sort direction is ascending
+            $sortDir = $request->input('sort_dir', 'asc');
+            // Prevent sorting by non-allowed fields
+            $allowedSorts = ['id', 'nama', 'created_at', 'updated_at'];
+            //  If the requested sortBy is not in allowedSorts, default to 'id'
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortDir);
+            }
         }
+
         // Apply pagination
         $perPage = $request->input('per_page', 10);
         //  Get paginated results

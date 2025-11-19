@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\DB;
 use App\Events\PesananMasukUntukTenant;
+use Illuminate\Support\Facades\Log;
 
 class PembayaranController extends Controller
 {
@@ -32,12 +33,12 @@ class PembayaranController extends Controller
             DB::transaction(function () use ($pesanan) {
                 // Perbarui status pembayaran pada tabel pembayaran dan pesanan
                 $pesanan->pembayaran->update([
-                    'status_pembayaran' => 'Lunas', 
+                    'status_pembayaran' => 'lunas', 
                     'waktu_bayar' => now()
                 ]);
 
                 // Perbarui status pesanan menjadi 'Diproses'
-                $pesanan->update(['status_pembayaran' => 'Diproses']);
+                $pesanan->update(['status_pesanan' => 'diproses']);
             });
 
             // Muat ulang relasi untuk mendapatkan detail pesanan lengkap
