@@ -8,8 +8,7 @@ use App\Http\Controllers\Api\KategoriMenuController;
 use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\PesananController;
 use App\Http\Controllers\Api\PembayaranController;
-
-use function Pest\Laravel\delete;
+use App\Http\Controllers\Api\RoleController;
 
 Route::post('/pesanan', [PesananController::class, 'store']);
 
@@ -37,6 +36,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::apiResource('/tenant.menu-items', MenuItemController::class)->only(['show', 'store', 'update', 'destroy'])->scoped()->middleware('role:Admin,Pemilik Tenant');
     Route::get('/menu-items', [MenuItemController::class, 'index'])->middleware('role:Admin,Pemilik Tenant');
     Route::apiResource('/pesanan', PesananController::class)->only(['index', 'show', 'update'])->middleware('role:Admin,Pemilik Tenant');
+    Route::apiResource('/roles', RoleController::class)->only(['index'])->middleware('role:Admin');
     // Route pembayaran
     Route::post('/pembayaran/{pesanan}/konfirmasi', [PembayaranController::class, 'konfirmasiManual'])->middleware('role:Admin,Pemilik Tenant');
 });

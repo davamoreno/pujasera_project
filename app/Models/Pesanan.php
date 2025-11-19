@@ -35,8 +35,8 @@ class Pesanan extends Model
         return $this->hasOne(Pembayaran::class, 'pesanan_id');
     }
 
-    public function sesiPembelian() : BelongsTo
+    public function sesiPembeli() : BelongsTo
     {
-        return $this->belongsTo(SesiPembeli::class, 'sesi_pembelian_id');
+        return $this->belongsTo(SesiPembeli::class, 'sesi_pembeli_id');
     }
 }
