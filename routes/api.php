@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MenuItemController;
 use App\Http\Controllers\Api\PesananController;
 use App\Http\Controllers\Api\PembayaranController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\RoleController;
 
 Route::post('/pesanan', [PesananController::class, 'store']);
 
@@ -25,13 +26,20 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
+// Public routes
+Route::group(['prefix' => 'public'], function () {
+    Route::get('/tenants', [TenantController::class, 'indexPublic']);
+});
+
+// Protected routes
 Route::group(['middleware' => 'auth:api'], function () {
     Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
-    Route::apiResource('/tenant', TenantController::class)->middleware('role:Admin');
+    Route::apiResource('/tenants', TenantController::class)->middleware('role:Admin');
     Route::apiResource('/kategori-menu', KategoriMenuController::class)->middleware('role:Admin,Pemilik Tenant');
     Route::apiResource('/tenant.menu-items', MenuItemController::class)->only(['show', 'store', 'update', 'destroy'])->scoped()->middleware('role:Admin,Pemilik Tenant');
     Route::get('/menu-items', [MenuItemController::class, 'index'])->middleware('role:Admin,Pemilik Tenant');
     Route::apiResource('/pesanan', PesananController::class)->only(['index', 'show', 'update'])->middleware('role:Admin,Pemilik Tenant');
+    Route::apiResource('/roles', RoleController::class)->only(['index'])->middleware('role:Admin');
     // Route pembayaran
     Route::post('/pembayaran/{pesanan}/konfirmasi', [PembayaranController::class, 'konfirmasiManual'])->middleware('role:Admin,Pemilik Tenant');
 });

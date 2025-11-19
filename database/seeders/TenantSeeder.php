@@ -21,13 +21,20 @@ class TenantSeeder extends Seeder
                 ['staff_id' => $pemilikToko->id], // Cari berdasarkan staff_id
                 [
                     'nama' => 'Warung Budi',
+                    'status' => 'Aman/Halal',
+                    'gambar_url' => null,
                     'is_active' => true
-                ]
+                ],
             );
         }
 
-        // Opsional: Buat 1 tenant lagi dengan staf acak
-        $staffLain = Staff::factory()->create(['role_id' => 2]); // Buat 1 pemilik toko baru
-        Tenant::factory()->create(['staff_id' => $staffLain->id, 'nama' => 'Kopi Senja']);
+        for ($i = 1; $i <= 20; $i++) {
+            $staff = Staff::factory()->create(['role_id' => 2]); // Buat staf dengan role Pemilik Tenant
+
+            Tenant::factory()->create([
+                'staff_id' => $staff->id, 'nama' => 'Tenant ' . $i,
+            ]);
+        }
+       
     }
 }

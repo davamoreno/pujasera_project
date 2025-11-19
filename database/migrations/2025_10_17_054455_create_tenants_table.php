@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 255);
+            $table->string('gambar_url', 255)->nullable();
+            $table->enum('status', ['Beberapa menu tidak halal', 'Aman/Halal'])->nullable();
             $table->foreignId('staff_id')->unique()->constrained('staffs');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
