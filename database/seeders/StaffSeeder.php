@@ -40,6 +40,6 @@ class StaffSeeder extends Seeder
         );
 
         // 4. Buat 8 staf acak lainnya
-       Staff::factory(8)->create();
+       Staff::factory(25)->create();
     }
 }

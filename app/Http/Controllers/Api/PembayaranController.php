@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\DB;
 use App\Events\PesananMasukUntukTenant;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class PembayaranController extends Controller
 {
@@ -21,7 +23,7 @@ class PembayaranController extends Controller
     /**
      * Handle manual payment confirmation for a specific order.
      */
-    public function konfirmasiManual(Request $request, Pesanan $pesanan)
+    public function konfirmasiManual(Request $request, Pesanan $pesanan) : JsonResponse
     {
         // Cek apakah pesanan sudah dibayar
         if ($pesanan->status_pembayaran === 'Lunas') {
@@ -32,12 +34,12 @@ class PembayaranController extends Controller
             DB::transaction(function () use ($pesanan) {
                 // Perbarui status pembayaran pada tabel pembayaran dan pesanan
                 $pesanan->pembayaran->update([
-                    'status_pembayaran' => 'Lunas', 
+                    'status_pembayaran' => 'lunas', 
                     'waktu_bayar' => now()
                 ]);
 
                 // Perbarui status pesanan menjadi 'Diproses'
-                $pesanan->update(['status_pembayaran' => 'Diproses']);
+                $pesanan->update(['status_pesanan' => 'diproses']);
             });
 
             // Muat ulang relasi untuk mendapatkan detail pesanan lengkap
@@ -49,11 +51,23 @@ class PembayaranController extends Controller
             });
 
             // Emit event untuk setiap tenant yang terkait dengan pesanan
-            foreach ($itemsByTenant as $tenantId => $items) {
+            foreach ($itemsByTenant as $tenantId => $detailItems) {
                 // Kirim event PesananMasukUntukTenant
+                $itemsPayload = $detailItems->map(function ($item) {
+                    return [
+                        'id' => $item->menu_item_id,
+                        'jumlah' => $item->jumlah,
+                        'catatan' => $item->catatan,
+                        'harga_saat_pesan' => $item->harga_saat_pesan,
+                        'menu_item' => [
+                            'nama' => $item->menuItem->nama,
+                            'harga' => $item->menuItem->harga,
+                        ],
+                    ];
+                });
                 event(new PesananMasukUntukTenant(
                     $tenantId,
-                    $items,
+                    $itemsPayload,
                     $pesanan->kode_pesanan
                 ));
             }
@@ -61,7 +75,7 @@ class PembayaranController extends Controller
             // Berhasil mengonfirmasi pembayaran
             return response()->json([
                 'message' => 'Konfirmasi pembayaran berhasil. pesanan diteruskan di dapur',
-                'pesanan' => $pesanan->load('pembayaran')
+                'pesanan' => $pesanan->load('pembayaran', 'detailPesanans.menuItem.tenant')
             ], 200);
         } catch (\Exception $e) {
             // Tangani kesalahan selama proses konfirmasi pembayaran

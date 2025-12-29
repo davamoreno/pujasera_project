@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('jumlah');
             $table->decimal('harga_saat_pesan', 10, 2);
             $table->text('catatan')->nullable();
+            $table->string('nama_menu_snapshot');
             $table->timestamps();
         });
     }

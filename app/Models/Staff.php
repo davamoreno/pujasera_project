@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Tenant;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\StaffFactory> */
-    use HasFactory, HasApiTokens;
+    use HasFactory, HasApiTokens, SoftDeletes;
 
     // Define the table associated with the model
     protected $table = 'staffs';
@@ -24,7 +26,9 @@ class Staff extends Authenticatable implements JWTSubject
         'nama',
         'username',
         'password',
-        'role_id'
+        'role_id',
+        'is_active',
+        'gambar_url',
     ];
 
     // Define hidden attributes for arrays
@@ -38,9 +42,9 @@ class Staff extends Authenticatable implements JWTSubject
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function tenants() : HasMany
+    public function tenant() : HasOne
     {
-        return $this->hasMany(Tenant::class, 'staff_id');
+        return $this->hasOne(Tenant::class, 'staff_id');
     }
 
     /**

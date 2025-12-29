@@ -14,9 +14,13 @@ return new class extends Migration
         Schema::create('tenants', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 255);
+            $table->string('gambar_url', 255)->nullable();
+            $table->enum('status', ['Beberapa menu tidak halal', 'Aman/Halal'])->nullable();
             $table->foreignId('staff_id')->unique()->constrained('staffs');
             $table->boolean('is_active')->default(true);
+            $table->enum('status_operasional', ['buka', 'tutup', 'istirahat', 'sibuk', 'tutup-permanent'])->default('tutup');
             $table->timestamps();
+            $table->softDeletes('deleted_at', 0);
         });
     }
 

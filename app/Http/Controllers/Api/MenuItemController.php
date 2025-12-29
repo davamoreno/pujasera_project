@@ -6,129 +6,109 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
 use App\Models\MenuItem;
-use Illuminate\Http\Request;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use App\Http\Resources\MenuItemResource;
 
 class MenuItemController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Instantiate a new MenuItemController instance.
      */
-
-    // public function index()
+    // public function __construct()
     // {
-    //   $user = Auth::user();
-
-    //   if($user->role->nama === 'Admin'){
-    //     $menuItems = MenuItem::with('tenant','kategori')->get(); 
-    //   }else{
-    //     $tenantId= $user->tenant->id;
-    //     $menuItems = MenuItem::where('tenant_id',$tenantId)
-    //     ->with('kategori')
-    //     ->get();
-    //   }
-    //   return response()->json($menuItems);
+    //     $this->authorizeResource(MenuItem::class, 'menu_item');
     // }
 
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
     {
+        $this->authorize('viewAny', MenuItem::class);
         $user = Auth::user();
 
+        $query = MenuItem::query()->with('tenant', 'kategori');
         if($user->role->nama === 'Admin'){
-            $menuItems = MenuItem::with('tenant','kategori')->get();
+            if ($request->has('tenant_id')) {
+                $query->where('tenant_id', $request->query('tenant_id'));
+            }
         }else{
-            $tenantId= $user->tenant->id;
-            $menuItems = MenuItem::where('tenant_id',$tenantId)
-            ->with('kategori')
-            ->get();
+            $tenantId = $user->tenant->id;
+            $query->where('tenant_id', $tenantId);
         }
 
-        if($menuItems->isEmpty() ){
-            return response()->json(['message' => 'No menu items found for this tenant.'], 404);
-        }
-        
-        return response()->json($menuItems);
+        $menuItems = $query->latest()->paginate(10);
+
+        return MenuItemResource::collection($menuItems);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreMenuItemRequest $request, Tenant $tenant)
+    public function store(StoreMenuItemRequest $request)
     {
         $this->authorize('create', MenuItem::class);
-
-        $menuItem = $tenant->where('id', $request->id)->first();
         $data = $request->validated();
         $user = Auth::user();
 
         if($user->role->nama === 'Pemilik Tenant'){
-            $data['tenant_id']=$user->tenant->id;
+            $data['tenant_id'] = $user->tenant->id;
         }
 
         if ($request->hasFile('gambar_url')) {
-            $path = $request->file('gambar_url')->store('public/menu_images');
-            $data['gambar_url'] = Storage::url($path);
+            $data['gambar_url'] = $request->file('gambar_url')->store('menu_images', 'public');
         }
 
         $menuItem = MenuItem::create($data);
-        return response()->json($menuItem->load('tenant','kategori'),201);
+        return new MenuItemResource($menuItem->load('tenant','kategori'));
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Tenant $tenant, MenuItem $menuItem)
+    public function show(MenuItem $menuItem)
     {
         $this->authorize('view', $menuItem);
-
-        $menuItem = $tenant->menuItems()->where('id', $menuItem->id)->first();
-        return response()->json($menuItem->load('tenant','kategori'));
+        return new MenuItemResource($menuItem->load('tenant','kategori'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateMenuItemRequest $request, Tenant $tenant, MenuItem $menuItem)
+    public function update(UpdateMenuItemRequest $request, MenuItem $menuItem)
     {
         $this->authorize('update', $menuItem);
-
-        $menuItem = $tenant->menuItems()->where('id', $menuItem->id)->first();
-
         $data = $request->validated();
 
         // Handle update file gambar
         if ($request->hasFile('gambar_url')) {
             // 1. Hapus gambar lama jika ada
             if ($menuItem->gambar_url) {
-                $oldPath = str_replace(Storage::url(''), 'public/', $menuItem->gambar_url);
-                Storage::delete($oldPath);
+                Storage::disk('public')->delete($menuItem->gambar_url);
             }
 
             // 2. Upload gambar baru
-            $path = $request->file('gambar_url')->store('public/menu_images');
-            $data['gambar_url'] = Storage::url($path);
+            $data['gambar_url'] = $request->file('gambar_url')->store('menu_images', 'public');
         }
 
         $menuItem->update($data);
 
-        return response()->json($menuItem->load('tenant', 'kategori'));
+        return new MenuItemResource($menuItem->load('tenant','kategori'));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Tenant $tenant,MenuItem $menuItem)
-    {
+    public function destroy(MenuItem $menuItem)
+    {  
         $this->authorize('delete', $menuItem);
-
-        $menuItem = $tenant->menuItems()->where('id', $menuItem->id)->first();
-
         if($menuItem->gambar_url){
-            $oldPath=str_replace(Storage::url(''),'public/', $menuItem->gambar_url);
-                Storage::delete($oldPath);
-            }
+            Storage::disk('public')->delete($menuItem->gambar_url);
+        }
 
         $menuItem->delete();
         return response()->json(null, 204);

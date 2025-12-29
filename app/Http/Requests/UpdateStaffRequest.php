@@ -29,6 +29,8 @@ class UpdateStaffRequest extends FormRequest
             'username' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('staffs')->ignore($this->staff)],
             // Password bersifat opsional. Hanya divalidasi jika ada di request.
             'password' => ['sometimes', 'required', 'string', Password::min(8)],
+            'is_active' => ['sometimes', 'required', 'boolean'],
+            'gambar_url' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'role_id' => ['sometimes', 'required', 'integer', 'exists:roles,id'],
         ];
     }

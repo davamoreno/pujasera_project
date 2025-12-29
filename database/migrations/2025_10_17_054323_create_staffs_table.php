@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('nama', 255);
             $table->string('username', 255)->unique();
-            $table->string('password', 255);
+            $table->string('password');
             $table->foreignId('role_id')->constrained('roles');
+            $table->string('gambar_url')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes('deleted_at', 0);
         });
     }
 

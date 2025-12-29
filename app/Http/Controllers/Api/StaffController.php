@@ -8,16 +8,50 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
 use Illuminate\Support\Facades\Hash; 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Role;
 
 class StaffController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $staff = Staff::with('role')->get();
+        $query = Staff::with('role');
+        if($request->has('search') && $request->input('search') != '')
+        {
+            $search = $request->query('search');
+            $query->where('nama', 'like', "%{$search}%");
+        }
+
+        if($request->has('sort_by') && $request->has('sort_dir'))
+        {
+            $sortBy = $request->input('sort_by', 'id');
+            $sortDir = $request->input('sort_dir', 'asc');
+            $allowedSorts = ['id', 'nama', 'role.nama', 'created_at', 'updated_at'];
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortDir);
+            }
+        }
+
+        if($request->boolean('available_for_tenant')) {
+            $tenantRole = Role::where('nama', 'Pemilik Tenant')->first();
+            if ($tenantRole) {
+                $query->where('role_id', $tenantRole->id);
+            }
+            $query->whereDoesntHave('tenant');
+        }
+
+        $per_page = $request->input('per_page', 10);
+        if($per_page) {
+            $staff = $query->paginate($per_page);
+            $staff->appends($request->only(['search', 'sort_by', 'sort_dir', 'per_page']));
+            return response()->json($staff);
+        }
+
+        $staff = $query->paginate($per_page);
         return response()->json($staff);
     }
 
@@ -28,6 +62,10 @@ class StaffController extends Controller
     {
         $validatedData = $request->validated();
         $validatedData['password'] = Hash::make($validatedData['password']);
+        if ($request->hasFile('gambar_url')) {
+            $path = $request->file('gambar_url')->store('public/staff_images');
+            $validatedData['gambar_url'] = Storage::url($path);
+        }
         $staff = Staff::create($validatedData);     
         return response()->json($staff, 201); 
     }
@@ -48,6 +86,18 @@ class StaffController extends Controller
        $validatedData = $request->validated();
 
         // Cek apakah ada password baru yang dikirim. Jika ada, hash password tersebut.
+        if ($request->hasFile('gambar_url')) {
+            // Hapus gambar lama jika ada
+            if ($staff->gambar_url) {
+                $oldImagePath = str_replace(Storage::url(''), '', $staff->gambar_url);
+
+                Storage::disk('public')->delete($oldImagePath);
+            }
+            // Simpan gambar baru   
+            $path = $request->file('gambar_url')->store('public/staff_images');
+            $validatedData['gambar_url'] = Storage::url($path);
+        }
+
         if (isset($validatedData['password'])) {
             $validatedData['password'] = Hash::make($validatedData['password']);
         }

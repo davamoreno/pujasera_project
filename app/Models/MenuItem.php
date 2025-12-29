@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MenuItem extends Model
 {
     /** @use HasFactory<\Database\Factories\MenuItemFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // Define the table associated with the model
     protected $table = 'menu_items';
@@ -25,6 +26,7 @@ class MenuItem extends Model
         'qty',
         'gambar_url',
         'is_tersedia',
+        'status_kehalalan',  
     ];
 
     // Define relationships

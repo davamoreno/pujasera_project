@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sesi_pembelis', function (Blueprint $table) {
-            $table->id();
-            $table->string('kode_sesi', 255)->unique();
-            $table->string('nama', 255)->nullable();
-            $table->boolean('is_closed')->default(false);
-            $table->timestamps();
+        Schema::table('sesi_pembelis', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sesi_pembelis');
+        Schema::table('sesi_pembelis', function (Blueprint $table) {
+            //
+        });
     }
 };
