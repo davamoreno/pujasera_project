@@ -21,6 +21,7 @@ class DetailPesanan extends Model
         'jumlah',
         'harga_saat_pesan',
         'catatan',
+        'nama_menu_snapshot',
     ];
 
     // Define relationships

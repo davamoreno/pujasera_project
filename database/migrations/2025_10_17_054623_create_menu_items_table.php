@@ -17,11 +17,13 @@ return new class extends Migration
             $table->foreignId('kategori_id')->constrained('kategori_menus');
             $table->string('nama', 255);
             $table->text('deskripsi')->nullable();
+            $table->enum('status_kehalalan', ['Halal', 'Tidak Halal'])->nullable();
             $table->decimal('harga', 10, 2);
             $table->string('gambar_url', 255)->nullable();
             $table->boolean('is_tersedia')->default(true);
-            $table->integer('qty');
+            $table->integer('qty')->default(0);
             $table->timestamps();
+            $table->softDeletes('deleted_at', 0);
         });
     }
 

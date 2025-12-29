@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-
+use App\Console\Commands\CleanupSesiPembeli;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -12,15 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
-   ->withMiddleware(function (Middleware $middleware): void {
-    $middleware->prepend([
-        \Illuminate\Http\Middleware\HandleCors::class,
-    ]);
-    $middleware->alias([
-        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'role' => \App\Http\Middleware\CheckRoleMiddleware::class,
-    ]);
-})
+    ->withCommands([CleanupSesiPembeli::class])
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend([
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        $middleware->alias([
+            'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+            'role' => \App\Http\Middleware\CheckRoleMiddleware::class,
+            'is_active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

@@ -18,7 +18,9 @@ return new class extends Migration
             $table->enum('status', ['Beberapa menu tidak halal', 'Aman/Halal'])->nullable();
             $table->foreignId('staff_id')->unique()->constrained('staffs');
             $table->boolean('is_active')->default(true);
+            $table->enum('status_operasional', ['buka', 'tutup', 'istirahat', 'sibuk', 'tutup-permanent'])->default('tutup');
             $table->timestamps();
+            $table->softDeletes('deleted_at', 0);
         });
     }
 

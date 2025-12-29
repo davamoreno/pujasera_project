@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Resources\AuthResource;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -16,7 +17,7 @@ class AuthController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request)
+    public function login(Request $request) : JsonResponse
     {
         // 1. Validasi input login
         $credentials = $request->validate([
@@ -42,7 +43,7 @@ class AuthController extends Controller
     * @param  \Illuminate\Http\Request  $request
     * @return \Illuminate\Http\JsonResponse
     */
-    public function logout()
+    public function logout() : JsonResponse
     {
         // Invalidate the token
         Auth::guard('api')->logout();
@@ -54,7 +55,7 @@ class AuthController extends Controller
      * Refresh a token.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refresh()
+    public function refresh() : JsonResponse
     {
         // Refresh the token
         return $this->createNewToken([
@@ -67,17 +68,24 @@ class AuthController extends Controller
      * Get the authenticated User.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function me()
+    public function me() : JsonResponse
     {
         return response()->json(new AuthResource(Auth::guard('api')->user()));
     }
 
+    public function refreshUserData() : JsonResponse
+    {
+        $user = Auth::guard('api')->user();
+        $user->load('role', 'tenant');
+
+        return response()->json(new AuthResource($user));
+    }
     /**
      * Create a new token structure.
      * @param  string $token
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function createNewToken($token)
+    protected function createNewToken($token) : JsonResponse
     {
         $user = Auth::guard('api')->user();
         $user->load('role', 'tenant');

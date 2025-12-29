@@ -9,31 +9,53 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Collection;
-
+use Illuminate\Support\Facades\Log;
+use App\Traits\BroadcastsPesanan;
 class XenditController extends Controller
 {
-    public function generateQRCode(Request $request, Pesanan $pesanan){
+    use BroadcastsPesanan;
+
+    public function createInvoicesLink(Request $request, Pesanan $pesanan){
+        if ($pesanan->pembayaran->xendit_invoice_url && $pesanan->pembayaran->xendit_invoice_status !== 'EXPIRED') 
+        {
+            return response()->json([
+                'invoice_url' => $pesanan->pembayaran->xendit_invoice_url
+            ]);
+        }
+        
         $secretKey = env('XENDIT_SECRET_KEY');
+        $frontendUrl = 'http://localhost:3000'; // Ganti dengan URL frontend Anda
 
         $payload = [
-            'external_id' => pesanan->kode_pesanan,
-            'type' => 'DYNAMIC', // Penting: QR code hanya untuk 1x bayar
+            'external_id' => $pesanan->kode_pesanan,
             'amount' => $pesanan->total_harga,
             'currency' => 'IDR',
-            'callback_url' => url('/api/webhooks/xendit'), // Beritahu Xendit ke mana harus kirim webhook
+            'invoice_duration' => 1800, // 30 menit
+            'success_redirect_url' => $frontendUrl . '/orders/' . $pesanan->kode_pesanan,
+            'failure_redirect_url' => $frontendUrl . '/orders/' . $pesanan->kode_pesanan,
         ];
 
-        $response = http::withBasicAuth($secretKey, '')
-            ->post('https://api.xendit.co/qr_codes', $payload);
+        $response = Http::withBasicAuth($secretKey, '')
+            ->post('https://api.xendit.co/v2/invoices', $payload);
         if($response->failed()){
-            \Log::error('Xendit QR Error: ', $response->json());
-            return response()->json(['message' => 'Gagal membuat QR Code Xendit'], 500);
+            Log::error('Xendit Invoices Error: ', $response->json());
+            return response()->json([
+                'message' => 'Gagal membuat Link pembayaran Xendit',
+                'error' => $response->json()
+            ], 500);
         }
-          return response()->json([
-            'qr_string' => $response->json()['qr_string'],
-            'external_id' => $response->json()['external_id']
+
+        $responseData = $response->json();
+        $pesanan->pembayaran()->update([
+            'xendit_invoice_id' => $responseData['id'],
+            'xendit_invoice_url' => $responseData['invoice_url'],
+            'xendit_invoice_status' => 'pending',
+        ]);
+        return response()->json([
+            'invoice_url' => $responseData['invoice_url']
         ]);
     }
+
     public function handleWebhook(Request $request){
         $webhookToken = $request->header('x-callback-token');
         if($webhookToken !==env('XENDIT_WEBHOOK_TOKEN')){
@@ -83,25 +105,5 @@ class XenditController extends Controller
 
         return response()->json(['message' => 'Status transaksi tidak diproses']);
 
-    }
-
-    private function broadcastPesananMasuk(Pesanan $pesanan){
-       $pesananLengkap = $pesanan->load('detailPesanans.menuItem.tenant');
-        $itemsByTenant = $pesananLengkap->detailPesanans->groupBy(fn($detail) => $detail->menuItem->tenant->id);
-
-        foreach ($itemsByTenant as $tenantId => $detailItems) {
-            $itemsPayload = $detailItems->map(fn($detail) => [
-                'id' => $detail->id,
-                'jumlah' => $detail->jumlah,
-                'catatan' => $detail->catatan,
-                'harga_saat_pesan' => $detail->harga_saat_pesan,
-                'menuItem' => ['nama' => $detail->menuItem->nama]
-            ])->all();
-
-            event(new PesananMasukUntukTenant(
-                $tenantId, $itemsPayload, $pesananLengkap->kode_pesanan
-            ));
-        }
-    
     }
 }

@@ -42,7 +42,7 @@ class WebhookController extends Controller
             }
             $this->broadcastPesananMasuk($pesanan);
 
-            return respons()->json(['message'=>'webhook berhasil diproses'],200);
+            return response()->json(['message'=>'webhook berhasil diproses'],200);
         } 
         return response()->json(['message' => 'Status transaksi tidak diproses.']);
     }

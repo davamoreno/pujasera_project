@@ -8,6 +8,7 @@ use App\Models\Pesanan;
 use Illuminate\Support\Facades\DB;
 use App\Events\PesananMasukUntukTenant;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class PembayaranController extends Controller
 {
@@ -22,7 +23,7 @@ class PembayaranController extends Controller
     /**
      * Handle manual payment confirmation for a specific order.
      */
-    public function konfirmasiManual(Request $request, Pesanan $pesanan)
+    public function konfirmasiManual(Request $request, Pesanan $pesanan) : JsonResponse
     {
         // Cek apakah pesanan sudah dibayar
         if ($pesanan->status_pembayaran === 'Lunas') {

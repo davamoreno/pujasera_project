@@ -29,6 +29,7 @@ class StorePesananRequest extends FormRequest
 
             // Info Pembayaran
             'metode_pembayaran_id' => ['required', 'integer', 'exists:metode_pembayarans,id'],
+            'tenant_id' => ['required', 'integer', 'exists:tenants,id'],
 
             // Validasi Array Item
             'items' => ['required', 'array', 'min:1'],

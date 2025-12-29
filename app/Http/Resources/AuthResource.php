@@ -26,6 +26,7 @@ class AuthResource extends JsonResource
                     'id' => $this->tenant->id,
                     'nama' => $this->tenant->nama,
                     'is_active' => $this->tenant->is_active,
+                    'status_operasional' => $this->tenant->status_operasional,
                 ];
             }),
         ];

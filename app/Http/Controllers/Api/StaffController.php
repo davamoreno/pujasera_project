@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
 use Illuminate\Support\Facades\Hash; 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Role;
 
@@ -61,6 +62,10 @@ class StaffController extends Controller
     {
         $validatedData = $request->validated();
         $validatedData['password'] = Hash::make($validatedData['password']);
+        if ($request->hasFile('gambar_url')) {
+            $path = $request->file('gambar_url')->store('public/staff_images');
+            $validatedData['gambar_url'] = Storage::url($path);
+        }
         $staff = Staff::create($validatedData);     
         return response()->json($staff, 201); 
     }
@@ -81,6 +86,18 @@ class StaffController extends Controller
        $validatedData = $request->validated();
 
         // Cek apakah ada password baru yang dikirim. Jika ada, hash password tersebut.
+        if ($request->hasFile('gambar_url')) {
+            // Hapus gambar lama jika ada
+            if ($staff->gambar_url) {
+                $oldImagePath = str_replace(Storage::url(''), '', $staff->gambar_url);
+
+                Storage::disk('public')->delete($oldImagePath);
+            }
+            // Simpan gambar baru   
+            $path = $request->file('gambar_url')->store('public/staff_images');
+            $validatedData['gambar_url'] = Storage::url($path);
+        }
+
         if (isset($validatedData['password'])) {
             $validatedData['password'] = Hash::make($validatedData['password']);
         }

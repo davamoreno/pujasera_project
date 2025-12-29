@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\KategoriMenu;
 use App\Http\Requests\KategoriMenuRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class KategoriMenuController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index() : JsonResponse
     {
         return response()->json(KategoriMenu::all());
     }
@@ -20,7 +21,7 @@ class KategoriMenuController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(KategoriMenuRequest $request)
+    public function store(KategoriMenuRequest $request) : JsonResponse
     {
        $kategori = KategoriMenu::create($request->validated());
        return response()->json($kategori, 201);
@@ -29,7 +30,7 @@ class KategoriMenuController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(KategoriMenu $kategoriMenu)
+    public function show(KategoriMenu $kategoriMenu) : JsonResponse
     {
          return response()->json($kategoriMenu);
     }
@@ -37,11 +38,10 @@ class KategoriMenuController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(KategoriMenuRequest $request, KategoriMenu $kategoriMenu)
+    public function update(KategoriMenuRequest $request, KategoriMenu $kategoriMenu) : JsonResponse
     {
-       $request->validate([
-        'nama'=>['required','string','max:255','unique:kategori_menu,nama' . $kategoriMenu->id],
-       ]);
+       $kategoriMenu->update($request->validated());
+       return response()->json($kategoriMenu);
     }
 
     /**
