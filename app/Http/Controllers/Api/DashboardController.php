@@ -26,10 +26,6 @@ class DashboardController extends Controller
         return $query;
     }
 
-    /**
-     * Endpoint baru: Mendapatkan daftar bulan yang ada transaksinya.
-     * Gunakan ini untuk mengisi Dropdown di Frontend.
-     */
     public function availableMonths()
     {
         $months = Pembayaran::select(
@@ -62,15 +58,15 @@ class DashboardController extends Controller
         // Terapkan Filter Bulan/Tahun
         $this->applyDateFilter($pembayaranQuery, $request, 'waktu_bayar');
 
-        // Variabel untuk lock low stock
+        // Variabel default
         $lowStockItems = [];
+        $topItems = [];
 
         if($user->role->nama === 'Admin')
         {
-            // Clone query agar tidak bentrok saat count dan sum
+            // Admin melihat global (opsional)
             $totalIncome = (clone $pembayaranQuery)->sum('jumlah_bayar');
             $totalTransactions = (clone $pembayaranQuery)->count();
-            
             $totalTenants = Tenant::count();
             $totalMenu = MenuItem::count();
         }
@@ -81,10 +77,13 @@ class DashboardController extends Controller
 
             $tenantId = $user->tenant->id;
             
-            $lowStockItems[] = MenuItem::where('tenant_id', $tenantId)
-            ->where('qty', '<', 5)
-            ->where('is_tersedia', true)
-            ->select('nama', 'qty')->get();
+            // --- PERBAIKAN 1: LOW STOCK ---
+            // Wajib select 'id' agar v-for di Vue berfungsi normal (key="item.id")
+            $lowStockItems = MenuItem::where('tenant_id', $tenantId)
+                ->where('qty', '<', 5)
+                ->where('is_tersedia', true)
+                ->select('id', 'nama', 'qty') // <--- TAMBAHKAN 'id' DISINI
+                ->get();
 
             // Filter pembayaran spesifik tenant ini
             $pembayaranQuery->whereHas('pesanan', function ($query) use ($tenantId) {
@@ -93,9 +92,33 @@ class DashboardController extends Controller
 
             $totalIncome = (clone $pembayaranQuery)->sum('jumlah_bayar');
             $totalTransactions = (clone $pembayaranQuery)->count();
-            
             $totalMenu = MenuItem::where('tenant_id', $tenantId)->count();
             $totalTenants = 1; 
+
+            // --- PERBAIKAN 2: CHART (TOP ITEMS) ---
+            // Kita ambil ID pesanan yang lunas dulu biar query lebih ringan
+            $lunasOrderIds = (clone $pembayaranQuery)->pluck('pesanan_id')->toArray();
+
+            if (!empty($lunasOrderIds)) {
+                $topItems = MenuItem::where('tenant_id', $tenantId)
+                    ->whereHas('detailPesanans', function($q) use ($lunasOrderIds) {
+                         $q->whereIn('pesanan_id', $lunasOrderIds);
+                    })
+                    ->withSum(['detailPesanans' => function($q) use ($lunasOrderIds) {
+                        $q->whereIn('pesanan_id', $lunasOrderIds);
+                    }], 'jumlah')
+                    ->orderByDesc('detail_pesanans_sum_jumlah')
+                    ->take(5)
+                    ->get()
+                    ->map(function($item) {
+                        return [
+                            'nama' => $item->nama,
+                            'total_qty' => (int) ($item->detail_pesanans_sum_jumlah ?? 0)
+                        ];
+                    });
+            } else {
+                $topItems = []; // Kalau belum ada transaksi lunas, kosongkan
+            }
         }
 
         return response()->json([
@@ -103,7 +126,8 @@ class DashboardController extends Controller
             'total_tenants' => $totalTenants,
             'total_menu_items' => $totalMenu,
             'total_transactions' => $totalTransactions,
-            'low_stock_items' => $lowStockItems
+            'low_stock_items' => $lowStockItems,
+            'top_items' => $topItems 
         ], 200);
     }
 
@@ -111,18 +135,14 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Ambil parameter filter
         $month = $request->input('month');
         $year = $request->input('year');
 
-        // Query Tenant
         $query = Tenant::with(['staff'])
             ->with(['pesanans' => function($q) use ($month, $year) {
-                // Filter Pesanan berdasarkan Pembayaran Lunas & Tanggal
                 $q->whereHas('pembayaran', function($p) use ($month, $year) {
                     $p->where('status_pembayaran', 'lunas');
                     
-                    // Filter Tanggal di sini
                     if ($month && $year) {
                         $p->whereMonth('waktu_bayar', $month)->whereYear('waktu_bayar', $year);
                     } elseif ($year) {
@@ -131,20 +151,15 @@ class DashboardController extends Controller
                 })->with('detailPesanans'); 
             }]);
 
-        // Filter Tenant spesifik jika bukan Admin
         if ($user->role->nama !== 'Admin') {
             if(!$user->tenant) return response()->json(['message' => 'No tenant'], 400);
             $query->where('id', $user->tenant->id);
         }
 
-        // Pagination
         $tenants = $query->paginate(10);
 
         $recapData = $tenants->map(function($tenant) use ($request) {
-            // Hitung Total Penjualan (Hanya dari pesanan yang sudah difilter di 'with' di atas)
             $totalPenjualan = $tenant->pesanans->sum('total_harga');
-
-            // Cari Menu Populer
             $allSoldItems = $tenant->pesanans->flatMap->detailPesanans;
 
             $bestSeller = $allSoldItems->groupBy('menu_item_id')
@@ -162,7 +177,6 @@ class DashboardController extends Controller
                 $bestSeller = ['nama' => '-', 'total_qty' => 0, 'harga' => 0];
             }
             
-            // Nama bulan dinamis
             $bulanLabel = ($request->month && $request->year) 
                 ? Carbon::create((int) $request->year, (int) $request->month, 1)->translatedFormat('F') 
                 : 'Semua Waktu';
@@ -177,7 +191,6 @@ class DashboardController extends Controller
             ];
         });
 
-        // Sorting array hasil mapping (bukan query DB)
         $sortedRecap = $recapData->sortByDesc('total_penjualan')->values();
 
         return response()->json($sortedRecap);

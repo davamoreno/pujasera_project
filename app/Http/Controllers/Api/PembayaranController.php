@@ -8,10 +8,12 @@ use App\Models\Pesanan;
 use Illuminate\Support\Facades\DB;
 use App\Events\PesananMasukUntukTenant;
 use Illuminate\Support\Facades\Log;
+use App\Traits\BroadcastsPesanan; // <--- 1. Import Trait
 use Illuminate\Http\JsonResponse;
 
 class PembayaranController extends Controller
 {
+    use BroadcastsPesanan; // <--- 2. Pakai Trait di sini
     /**
      * Display a listing of the resource.
      */
@@ -35,7 +37,8 @@ class PembayaranController extends Controller
                 // Perbarui status pembayaran pada tabel pembayaran dan pesanan
                 $pesanan->pembayaran->update([
                     'status_pembayaran' => 'lunas', 
-                    'waktu_bayar' => now()
+                    'waktu_bayar' => now(),
+                    'expires_at' => null,
                 ]);
 
                 // Perbarui status pesanan menjadi 'Diproses'

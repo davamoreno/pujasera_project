@@ -43,4 +43,9 @@ class PesananMasukUntukTenant implements ShouldBroadcastNow
             new PrivateChannel('tenant.' . $this->tenantId),
         ];
     }
+
+    public function broadcastAs() : string
+    {
+        return 'PesananMasukUntukTenant';
+    }
 }

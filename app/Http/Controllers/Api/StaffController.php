@@ -129,4 +129,24 @@ class StaffController extends Controller
         // Ini adalah status HTTP yang tepat untuk menandakan aksi delete berhasil.
         return response()->json(['message' => 'Akun ' . $staff->nama . ' Berhasil dihapus'], 201);
     }
+
+    // Custom Method: Toggle Status Aktif/Nonaktif Staff
+    public function toggleStatus(Request $request, Staff $staff)
+    {
+        // Validasi: Admin tidak boleh menonaktifkan dirinya sendiri
+        if (Auth::id() === $staff->id) {
+            return response()->json(['message' => 'Anda tidak bisa menonaktifkan akun sendiri.'], 403);
+        }
+
+        // Toggle status (jika 1 jadi 0, jika 0 jadi 1)
+        $staff->is_active = !$staff->is_active;
+        $staff->save();
+
+        $statusText = $staff->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return response()->json([
+            'message' => "Staff {$staff->nama} berhasil {$statusText}",
+            'data' => $staff
+        ]);
+    }
 }
