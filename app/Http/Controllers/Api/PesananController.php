@@ -176,6 +176,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
 
 class PesananController extends Controller
@@ -286,6 +287,7 @@ class PesananController extends Controller
                     'jumlah_bayar' => $totalHargaPesanan,
                     'status_pembayaran' => 'pending',
                     'external_id' => 'EXT-' . strtoupper(Str::random(12)), // Biasanya dari Xendit/Midtrans
+                    'expires_at' => Carbon::now()->addHours(2)->timezone('Asia/Makassar')->format('Y-m-d H:i:s'), // Contoh: Expire dalam 2 jam
                 ]);
 
                 // 6. Kurangi Stok (Decrement)

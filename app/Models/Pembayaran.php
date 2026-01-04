@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,9 @@ class Pembayaran extends Model
     // Define the table associated with the model
     protected $table = 'pembayarans';
 
+    // Define appended attributes
+    protected $appends = ['checkout_link'];
+
     // Define fillable attributes for mass assignment
     protected $fillable = [
         'pesanan_id',
@@ -21,9 +25,25 @@ class Pembayaran extends Model
         'metode_pembayaran_id',
         'jumlah_bayar',
         'status_pembayaran',
+        'xendit_expires_at',
+        'expires_at',
         'waktu_bayar',
         'external_id',
     ];
+
+
+    // Define accessor for checkout_link
+    public function checkoutLink() : Attribute
+    {
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                 if(!empty($attributes['xendit_invoice_url'])){
+                    return $attributes['xendit_invoice_url'];
+                 }
+                 return null;
+                }
+        );
+    }
 
     // Define relationships
     public function pesanan() : BelongsTo

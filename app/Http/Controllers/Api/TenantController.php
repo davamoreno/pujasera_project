@@ -181,4 +181,24 @@ class TenantController extends Controller
 
         return new TenantResource($tenant);    
     }
+
+    public function toggleActive(Tenant $tenant)
+    {
+        // Toggle status is_active
+        $tenant->is_active = !$tenant->is_active;
+        
+        // Jika dinonaktifkan, paksa status operasional jadi TUTUP
+        if (!$tenant->is_active) {
+            $tenant->status_operasional = \App\Enums\TenantStatus::CLOSED;
+        }
+
+        $tenant->save();
+
+        $statusText = $tenant->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return response()->json([
+            'message' => "Tenant {$tenant->nama} berhasil {$statusText}",
+            'data' => $tenant
+        ]);
+    }
 }

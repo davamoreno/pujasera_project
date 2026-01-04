@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use App\Traits\BroadcastsPesanan;
+use Carbon\Carbon;
+
 class XenditController extends Controller
 {
     use BroadcastsPesanan;
@@ -30,7 +32,7 @@ class XenditController extends Controller
             'external_id' => $pesanan->kode_pesanan,
             'amount' => $pesanan->total_harga,
             'currency' => 'IDR',
-            'invoice_duration' => 1800, // 30 menit
+            'invoice_duration' => 3600, // 1 jam
             'success_redirect_url' => $frontendUrl . '/orders/' . $pesanan->kode_pesanan,
             'failure_redirect_url' => $frontendUrl . '/orders/' . $pesanan->kode_pesanan,
         ];
@@ -49,6 +51,9 @@ class XenditController extends Controller
         $pesanan->pembayaran()->update([
             'xendit_invoice_id' => $responseData['id'],
             'xendit_invoice_url' => $responseData['invoice_url'],
+            'xendit_expires_at' => Carbon::parse($responseData['expiry_date'])
+                ->setTimezone('Asia/Makassar')
+                ->format('Y-m-d H:i:s'),
             'xendit_invoice_status' => 'pending',
         ]);
         return response()->json([
@@ -57,53 +62,58 @@ class XenditController extends Controller
     }
 
     public function handleWebhook(Request $request){
+
+        // 1. CEK APAKAH REQUEST MASUK?
+        Log::info('🔔 Webhook Xendit Masuk!', $request->all());
+
         $webhookToken = $request->header('x-callback-token');
-        if($webhookToken !==env('XENDIT_WEBHOOK_TOKEN')){
-            return response()->json(['message'=>'Unauthorized'],401);
+
+        // 2. CEK TOKEN
+        if($webhookToken !== env('XENDIT_WEBHOOK_TOKEN')){
+            Log::error('❌ Token Tidak Cocok! Dikirim: ' . $webhookToken);
+            return response()->json(['message'=>'Unauthorized'], 401);
         }
 
-        $payload =  $request->all();
-
-        // Ambil ID dari payload. Untuk QR, Xendit mengirim 'data', 
-        // tapi untuk invoice 'external_id'. Kita cek keduanya.
+        $payload = $request->all();
         $kodePesanan = $payload['external_id'] ?? $payload['data']['external_id'] ?? null;
-        // PERBAIKAN: Status QR Code adalah 'COMPLETED', Invoice adalah 'PAID'
         $statusTransaksi = $payload['status'] ?? $payload['data']['status'] ?? null;
+
+        Log::info("🔍 Cek Pesanan: $kodePesanan | Status: $statusTransaksi");
 
         $pesanan = Pesanan::where('kode_pesanan', $kodePesanan)->first();
 
         if (!$pesanan) {
+            Log::error('❌ Pesanan tidak ditemukan di DB');
             return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         }
 
-        // Cek apakah statusnya 'PAID' (dari Invoice) atau 'COMPLETED' (dari QR Code)
-        if ($statusTransaksi === 'PAID' || $statusTransaksi === 'COMPLETED') {
-            
-            if ($pesanan->pembayaran->status_pembayaran === 'lunas') {
-                return response()->json(['message' => 'Pesanan sudah lunas'], 200);
-            }
-
+        if ($statusTransaksi === 'PAID' || $statusTransaksi === 'COMPLETED' || $statusTransaksi === 'SUCCEEDED') {
             try {
                 DB::transaction(function () use ($pesanan) {
                     $pesanan->pembayaran->update([
                         'status_pembayaran' => 'lunas',
                         'waktu_bayar' => now(),
+                        'xendit_invoice_status' => 'PAID',
+                        'xendit_expires_at' => null,
                     ]);
                     $pesanan->update([
                         'status_pesanan' => 'diproses',
                     ]);
                 });
+
+                Log::info('✅ Berhasil Update DB ke Diproses!');
+
+                $this->broadcastPesananMasuk($pesanan);
+                return response()->json(['message' => 'Webhook berhasil diproses']);
+
             } catch (\Exception $e) {
+                Log::error('❌ Gagal Update DB: ' . $e->getMessage());
                 return response()->json(['message' => 'Gagal update database'], 500);
             }
-
-            // PICU EVENT REAL-TIME (Logika yang sama persis)
-            $this->broadcastPesananMasuk($pesanan);
-
-            return response()->json(['message' => 'Webhook berhasil diproses']);
+        } else {
+            Log::warning('⚠️ Status transaksi bukan PAID/COMPLETED: ' . $statusTransaksi);
         }
 
         return response()->json(['message' => 'Status transaksi tidak diproses']);
-
     }
 }

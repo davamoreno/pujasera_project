@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 Schedule::command('model:prune', [
     '--model' => [App\Models\SesiPembeli::class]
 ])->daily();
+
+Schedule::command('orders:auto-cancel')->everyMinute();

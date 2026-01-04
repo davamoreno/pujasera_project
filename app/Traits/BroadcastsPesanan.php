@@ -35,7 +35,7 @@ trait BroadcastsPesanan
                 'catatan' => $detail->catatan,
                 'harga_saat_pesan' => $detail->harga_saat_pesan,
                 'menuItem' => ['nama' => $detail->menuItem->nama]
-            ])->all();
+            ]);
 
             event(new PesananMasukUntukTenant(
                 $tenantId, $itemsPayload, $pesananLengkap->kode_pesanan

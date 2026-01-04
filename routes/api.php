@@ -49,6 +49,7 @@ Route::group(['prefix' => 'public'], function () {
     // Route::get('/pesanan/{kode_pesanan}', [PesananController::class, 'showByKodePesanan']);
     // Xendit routes
     Route::post('/pembayaran/{pesanan:kode_pesanan}/link', [XenditController::class, 'createInvoicesLink']);
+    Route::post('/webhook/xendit', [XenditController::class, 'handleWebhook']);
 });
 
 // Protected routes
@@ -74,6 +75,8 @@ Route::group(['middleware' => ['auth:api', 'is_active']], function () {
         Route::apiResource('/staff', StaffController::class)->middleware('role:Admin');
         Route::apiResource('/tenants', TenantController::class)->middleware('role:Admin');
         Route::apiResource('/roles', RoleController::class)->only(['index'])->middleware('role:Admin');
+        Route::patch('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->middleware('role:Admin');
+        Route::patch('/tenants/{tenant}/toggle-active', [TenantController::class, 'toggleActive'])->middleware('role:Admin');
     });
 
     // Pemilik Tenant routes
